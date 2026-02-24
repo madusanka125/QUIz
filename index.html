@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bottled Water Technology Quiz</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .options-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            width: 100%;
+            color: #444;
+        }
+
+        .option-btn:hover:not(.disabled) {
+            border-color: var(--primary-color);
+            background-color: #f0f8ff;
+        }
+
+        .option-btn.correct {
+            background-color: #d4edda;
+            border-color: var(--success-color);
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .option-btn.wrong {
+            background-color: #f8d7da;
+            border-color: var(--error-color);
+            color: var(--error-color);
+        }
+
+        .option-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .next-btn,
+        .restart-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: background 0.3s;
+            display: none;
+            /* Hidden by default */
+        }
+
+        .next-btn:hover,
+        .restart-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .result-screen {
+            display: none;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="quiz-container">
+        <div id="quiz-screen">
+            <h1>Water Technology Quiz</h1>
+            <div class="stats-bar">
+                <span id="question-count">Question 1 of 100</span>
+                <span id="score-display">Score: 0</span>
+            </div>
+            <div class="question-text" id="question">Loading question...</div>
+            <div class="options-list" id="options">
+            </div>
+            <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next Question</button>
+        </div>
+
+        <div id="result-screen" class="result-screen">
+            <h2>Quiz Completed!</h2>
+            <div class="score-circle">
+                <span id="final-score">0</span>
+            </div>
+            <p id="final-message">Well done!</p>
+            <button class="restart-btn" onclick="location.reload()" style="display:inline-block;">Restart Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        // Full dataset of 100 Questions extracted from source
+        const quizData = [
+            // --- Set 1: General Bottled Water Knowledge ---
+            { q: "Bottled water is considered a consumer food product by:", options: ["WHO", "FAO", "FDA", "EPA"], a: 2 }, // C
+            { q: "Mineral water must contain at least how much TDS?", options: ["50 ppm", "100 ppm", "250 ppm", "500 ppm"], a: 2 }, // C
+            { q: "Purified water may be produced by:", options: ["Distillation", "Reverse osmosis", "Deionization", "All of the above"], a: 3 }, // D
+            { q: "Artesian water originates from:", options: ["Surface runoff", "Confined aquifer", "Municipal supply", "River source"], a: 1 }, // B
+            { q: "In Europe, Natural Mineral Water must be:", options: ["Treated with chlorine", "Bottled at source", "Transported in bulk", "Mixed with additives"], a: 1 }, // B
+            { q: "Natural mineral water may NOT be:", options: ["Carbonated", "Disinfected", "Bottled at source", "Tested"], a: 1 }, // B
+            { q: "Spring water must be:", options: ["Artificially mineralized", "Microbiologically safe at source", "Distilled", "Chlorinated"], a: 1 }, // B
+            { q: "Bottled drinking water is also called:", options: ["Natural water", "Table water", "Mineral water", "Artesian water"], a: 1 }, // B
+            { q: "Stable mineral composition is mandatory for:", options: ["Spring water", "Bottled drinking water", "Natural mineral water", "Purified water"], a: 2 }, // C
+            { q: "WHO guidelines are mainly related to:", options: ["Bottle design", "Microbiological & chemical limits", "Marketing", "Pricing"], a: 1 }, // B
+            { q: "One microbiological indicator mentioned is:", options: ["Iron", "Fluoride", "Coliform", "Calcium"], a: 2 }, // C
+            { q: "Dissolved iron may cause:", options: ["Sweet taste", "Brown deposits", "Foam formation", "Blue color"], a: 1 }, // B
+            { q: "Iron removal involves:", options: ["Adsorption only", "Forced oxidation + filtration", "Membrane only", "Ion exchange only"], a: 1 }, // B
+            { q: "Common oxidants for iron removal:", options: ["Chlorine & peroxide", "Air & ozone", "UV & chlorine", "Carbon dioxide"], a: 1 }, // B
+            { q: "Ammonium can biologically oxidize into:", options: ["Chloride", "Sulfate", "Nitrite", "Carbonate"], a: 2 }, // C
+            { q: "Recommended method for ammonium removal in bottled water:", options: ["Chlorination", "Bio-oxidation", "UV", "Distillation"], a: 1 }, // B
+            { q: "Arsenic removal can be done by:", options: ["Activated carbon only", "Ferric hydroxide co-precipitation", "Boiling", "UV"], a: 1 }, // B
+            { q: "Fluoride removal is commonly done using:", options: ["Silica sand", "Activated alumina", "Gravel", "Anthracite"], a: 1 }, // B
+            { q: "Organic matter removal method:", options: ["Activated carbon adsorption", "Gravel filtration only", "CO2 injection", "Air stripping only"], a: 0 }, // A
+            { q: "VOC removal is achieved by:", options: ["UV only", "Activated carbon", "Sand only", "Ozone only"], a: 1 }, // B
+            { q: "CO2 addition is used to produce:", options: ["Distilled water", "Sparkling water", "Sterile water", "Spring water"], a: 1 }, // B
+            { q: "Filtration removes:", options: ["Dissolved salts only", "Suspended solids", "Gases", "Minerals"], a: 1 }, // B
+            { q: "Suspended solids are typically larger than:", options: ["1 nm", "10 nm", "1 µm", "100 µm"], a: 2 }, // C
+            { q: "Pressure drop across filter indicates:", options: ["Water color", "Filter performance", "Taste", "Mineral content"], a: 1 }, // B
+            { q: "Rapid sand filter rate in bottled water industry:", options: ["1–3 m/h", "8–15 m/h", "20–30 m/h", "50 m/h"], a: 1 }, // B
+            { q: "EBCT stands for:", options: ["Effective Bed Cleaning Time", "Empty Bed Contact Time", "Energy Balance Calculation Time", "Extended Backwash Cleaning Time"], a: 1 }, // B
+            { q: "EBCT range in bottled water treatment:", options: ["1–3 min", "5–15 min", "20–30 min", "30–60 min"], a: 1 }, // B
+            { q: "Common media materials:", options: ["PVC & steel", "Silica sand & anthracite", "Aluminum & copper", "Rubber"], a: 1 }, // B
+            { q: "Backwash bed expansion should be:", options: ["1–5%", "10–20%", "50%", "80%"], a: 1 }, // B
+            { q: "Air injection rate during backwash:", options: ["1–5 m/h", "10–15 m/h", "20–40 m/h", "50–80 m/h"], a: 2 }, // C
+            { q: "Backwash flow rate is typically:", options: ["Same as nominal", "Half of nominal", "2–3 times nominal", "10 times nominal"], a: 2 }, // C
+            { q: "Depth filters are characterized by:", options: ["Absolute pore size", "Random pore size distribution", "No pores", "Only surface trapping"], a: 1 }, // B
+            { q: "Depth filters have:", options: ["Absolute rating", "Nominal pore size", "No rating", "Chemical rating"], a: 1 }, // B
+            { q: "Membrane filters are characterized by:", options: ["Random pores", "Absolute pore size", "Large gravel", "No retention"], a: 1 }, // B
+            { q: "Composite filters combine properties of:", options: ["Sand & gravel", "Depth & membrane filters", "UV & ozone", "Carbon & sand"], a: 1 }, // B
+            { q: "Natural mineral water must state on label:", options: ["Price", "Mineral composition", "Bottle color", "Treatment method"], a: 1 }, // B
+            { q: "Natural mineral water must meet quality standards:", options: ["Lower than tap water", "Same as industrial water", "Higher than conventional drinking water", "No standards"], a: 2 }, // C
+            { q: "Removal of biological contaminants can be achieved by:", options: ["Adsorption", "Chlorination", "UV", "All of the above"], a: 3 }, // D
+            { q: "Protozoa are classified as:", options: ["Chemical contaminant", "Biological contaminant", "Physical contaminant", "Mineral"], a: 1 }, // B
+            { q: "Oxidation is used for removal of:", options: ["Iron", "Manganese", "Ammonium", "All of the above"], a: 3 }, // D
+            { q: "Marketing modifications may include:", options: ["Adding vitamins", "Adding fibers", "Removing minerals", "All of the above"], a: 3 }, // D
+            { q: "If composition is strongly modified, product cannot be:", options: ["Purified water", "Natural water", "Sparkling water", "Drinking water"], a: 1 }, // B
+            { q: "Membrane processes include:", options: ["Nanofiltration", "Ultrafiltration", "Reverse osmosis", "All of the above"], a: 3 }, // D
+            { q: "Pressure filters are commonly used in:", options: ["Rapid sand filtration", "UV treatment", "Distillation", "Ozonation"], a: 0 }, // A
+            { q: "Bottled water may be classified as:", options: ["Still", "Sparkling", "Both", "None"], a: 2 }, // C
+            { q: "Naturally carbonated water has:", options: ["Added industrial CO2", "Same CO2 level as source", "No CO2", "Artificial flavor"], a: 1 }, // B
+            { q: "Chemical elements of health significance include:", options: ["Arsenic", "Fluoride", "VOCs", "All of the above"], a: 3 }, // D
+            { q: "Biological oxidation is preferred for ammonium because:", options: ["Faster", "Cheaper", "Avoids by-product formation", "Easier"], a: 2 }, // C
+            { q: "Filtration cake formation improves:", options: ["Taste", "Filter efficiency", "Color", "Mineral content"], a: 1 }, // B
+            { q: "Final step after backwash is:", options: ["Chlorination", "Rinse", "UV", "CO2 addition"], a: 1 }, // B
+
+            // --- Set 2: Specific Technology & Chemistry ---
+            { q: "Which process is commonly used for ammonium removal in bottled water?", options: ["Adsorption", "Biological nitrification", "Reverse osmosis", "Distillation"], a: 1 }, // B
+            { q: "Biological nitrification converts ammonium (NH4⁺) first into:", options: ["Nitrate", "Nitrogen gas", "Nitrite", "Ammonia"], a: 2 }, // C
+            { q: "Which bacteria are involved in nitrification?", options: ["E. coli and Salmonella", "Nitrosomonas and Nitrobacter", "Lactobacillus and Bacillus", "Pseudomonas only"], a: 1 }, // B
+            { q: "Typical time to reach full nitrification efficiency is:", options: ["1–2 days", "1 week", "3–5 weeks", "3 months"], a: 2 }, // C
+            { q: "Microfiltration (MF) removes microorganisms by:", options: ["Chemical oxidation", "UV radiation", "Membrane trapping", "Ion exchange"], a: 2 }, // C
+            { q: "Ultrafiltration (UF) can remove:", options: ["Only bacteria", "Only protozoa", "Bacteria and viruses", "Only suspended solids"], a: 2 }, // C
+            { q: "Standard ozone CT value for inactivation is:", options: ["0.4", "1.6", "4.0", "10"], a: 1 }, // B
+            { q: "Ozone CT value means:", options: ["Concentration × Temperature", "Chlorine Treatment", "Concentration × Contact Time", "Carbon Treatment"], a: 2 }, // C
+            { q: "Standard UV dose for most microorganisms is:", options: ["5–10 mJ/cm²", "10–20 mJ/cm²", "25–40 mJ/cm²", "100–200 mJ/cm²"], a: 2 }, // C
+            { q: "Maximum UV effectiveness occurs at wavelength:", options: ["180 nm", "220 nm", "260 nm", "400 nm"], a: 2 }, // C
+            { q: "Water reaches maximum density at:", options: ["0°C", "3.94°C", "25°C", "100°C"], a: 1 }, // B
+            { q: "Ice is less dense than water because of:", options: ["Higher temperature", "Hydrogen bonding", "Open molecular structure", "Salt content"], a: 2 }, // C
+            { q: "The bond angle between hydrogen atoms in water is:", options: ["90°", "105°", "120°", "180°"], a: 1 }, // B
+            { q: "Water’s high heat capacity helps:", options: ["Increase evaporation", "Stabilize temperature", "Increase density", "Reduce solubility"], a: 1 }, // B
+            { q: "Stainless steel is widely used in plant equipment because it:", options: ["Is cheap", "Is light", "Is chemically inert and hygienic", "Adds minerals"], a: 2 }, // C
+            { q: "Pipework in bottling plants should be:", options: ["Transparent", "Painted", "Self-draining", "Flexible"], a: 2 }, // C
+            { q: "Activated carbon is used to:", options: ["Increase pH", "Remove taints and odors", "Add minerals", "Increase carbonation"], a: 1 }, // B
+            { q: "Carbon dioxide used in bottling must be:", options: ["Colored", "Fermented only", "Purified", "Diluted"], a: 2 }, // C
+            { q: "Process air should be filtered to:", options: ["1 µm", "0.5 µm", "0.01 µm", "5 µm"], a: 2 }, // C
+            { q: "Glass packaging is chemically:", options: ["Reactive", "Inert", "Acidic", "Porous"], a: 1 }, // B
+            { q: "Major disadvantage of glass is:", options: ["Not recyclable", "Breakable", "Not clear", "Not resealable"], a: 1 }, // B
+            { q: "Most important packaging material today is:", options: ["Glass", "PVC", "PET", "HDPE"], a: 2 }, // C
+            { q: "PET disadvantage for sparkling water is:", options: ["Heavy weight", "Loss of carbonation", "Fragility", "Opacity"], a: 1 }, // B
+            { q: "PVC declined mainly due to:", options: ["High strength", "High cost", "Consumer pressure", "Poor clarity"], a: 2 }, // C
+            { q: "Aluminium cans are preferred because:", options: ["Cheaper", "Transparent", "Better corrosion resistance", "Reusable"], a: 2 }, // C
+            { q: "Cartons are suitable only for:", options: ["Sparkling water", "Flavored water", "Still water", "Mineral water only"], a: 2 }, // C
+            { q: "Polycarbonate bottles are mainly used for:", options: ["Small bottles", "Sparkling water", "Water coolers (large volume)", "Cans"], a: 2 }, // C
+            { q: "HDPE disadvantage is:", options: ["Heavy", "Not recyclable", "May affect taste", "Fragile"], a: 2 }, // C
+            { q: "Closure materials include:", options: ["Wood", "Ceramic", "Aluminium & plastics", "Rubber only"], a: 2 }, // C
+            { q: "Internal pressure in carbonated bottles can reach:", options: ["2 bar", "5 bar", "10 bar", "20 bar"], a: 2 }, // C
+            { q: "Venting in PET bottles prevents:", options: ["Leakage", "Missiling of cap", "Carbonation loss", "UV damage"], a: 1 }, // B
+            { q: "All bottled water closures must be:", options: ["Colored", "Transparent", "Tamper-evident", "Reusable"], a: 2 }, // C
+            { q: "Bottles are designed for:", options: ["Multiple reuse", "Single use", "Refilling", "Heating"], a: 1 }, // B
+            { q: "Water is highly susceptible to:", options: ["Radiation", "Chemical and organoleptic change", "Freezing only", "Density loss"], a: 1 }, // B
+            { q: "Rough filters should be placed:", options: ["Before filling", "Near source", "After capping", "After labeling"], a: 1 }, // B
+            { q: "Final fine filter is located:", options: ["At source", "After labeling", "Before bottle filling", "After storage"], a: 2 }, // C
+            { q: "UV can destroy residual ozone at dose:", options: ["25 mJ/cm²", "40 mJ/cm²", "100 mJ/cm²", "180 mJ/cm²"], a: 3 }, // D
+            { q: "Chlorine-added water requires:", options: ["Heating", "Dechlorination before bottling", "Cooling", "Ion exchange"], a: 1 }, // B
+            { q: "Biological filters require regular:", options: ["Painting", "Freezing", "Backwashing", "Sealing"], a: 2 }, // C
+            { q: "Hydrogen bonds cause water’s:", options: ["Low surface tension", "Cohesion", "Low boiling point", "Low solubility"], a: 1 }, // B
+            { q: "Maximum UV transmissivity decreases with high:", options: ["Oxygen", "Turbidity", "CO₂", "pH"], a: 1 }, // B
+            { q: "Ozone in “germ free bottling” helps:", options: ["Flavor", "Packaging sanitation", "Coloring", "Mineral addition"], a: 1 }, // B
+            { q: "Cleaning schedules must define:", options: ["Only frequency", "Only chemicals", "What, who, how, and frequency", "Only staff"], a: 2 }, // C
+            { q: "Floors in filling rooms should be:", options: ["Wooden", "Porous", "Sealed and cleanable", "Carpeted"], a: 2 }, // C
+            { q: "Filling areas should have:", options: ["Negative pressure", "Positive pressure", "Open windows", "Wooden floors"], a: 1 }, // B
+            { q: "Hand wash basins should not be used for:", options: ["Cleaning hands", "Washing equipment", "Hygiene", "Staff use"], a: 1 }, // B
+            { q: "Jewellery is restricted because it:", options: ["Is expensive", "Can contaminate product", "Is heavy", "Breaks bottles"], a: 1 }, // B
+            { q: "Natural Mineral Water filtration must avoid:", options: ["Sand removal", "Compositional change", "Fine filtration", "UV"], a: 1 }, // B
+            { q: "Carbon filtration should be placed:", options: ["After final filter", "Upstream from final filtration", "After labeling", "At dispatch"], a: 1 }, // B
+            { q: "Bottled water is classified as:", options: ["Beverage only", "Pharmaceutical", "Food", "Chemical product"], a: 2 }  // C
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let questionAnswered = false;
+
+        const questionEl = document.getElementById("question");
+        const optionsEl = document.getElementById("options");
+        const nextBtn = document.getElementById("next-btn");
+        const countEl = document.getElementById("question-count");
+        const scoreEl = document.getElementById("score-display");
+        const quizScreen = document.getElementById("quiz-screen");
+        const resultScreen = document.getElementById("result-screen");
+        const finalScoreEl = document.getElementById("final-score");
+        const finalMsgEl = document.getElementById("final-message");
+
+        function loadQuestion() {
+            questionAnswered = false;
+            nextBtn.style.display = "none";
+
+            const qData = quizData[currentQuestion];
+            questionEl.innerText = `${currentQuestion + 1}. ${qData.q}`;
+            countEl.innerText = `Question ${currentQuestion + 1} of ${quizData.length}`;
+            scoreEl.innerText = `Score: ${score}`;
+
+            optionsEl.innerHTML = "";
+
+            qData.options.forEach((opt, index) => {
+                const btn = document.createElement("button");
+                btn.classList.add("option-btn");
+                // Add A, B, C, D labels
+                const labels = ["A", "B", "C", "D"];
+                btn.innerText = `${labels[index]}) ${opt}`;
+                btn.onclick = () => selectOption(index, btn);
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function selectOption(selectedIndex, btnElement) {
+            if (questionAnswered) return;
+            questionAnswered = true;
+
+            const correctIndex = quizData[currentQuestion].a;
+            const allOptions = document.getElementsByClassName("option-btn");
+
+            if (selectedIndex === correctIndex) {
+                btnElement.classList.add("correct");
+                score++;
+                scoreEl.innerText = `Score: ${score}`;
+            } else {
+                btnElement.classList.add("wrong");
+                // Highlight the correct one
+                allOptions[correctIndex].classList.add("correct");
+            }
+
+            // Disable all buttons
+            for (let btn of allOptions) {
+                btn.classList.add("disabled");
+            }
+
+            nextBtn.style.display = "inline-block";
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            quizScreen.style.display = "none";
+            resultScreen.style.display = "block";
+            finalScoreEl.innerText = `${score} / ${quizData.length}`;
+
+            const percentage = (score / quizData.length) * 100;
+            if (percentage >= 80) {
+                finalMsgEl.innerText = "Excellent Work! You're an expert.";
+            } else if (percentage >= 50) {
+                finalMsgEl.innerText = "Good job! You know your basics.";
+            } else {
+                finalMsgEl.innerText = "Keep studying and try again!";
+            }
+        }
+
+        // Initialize
+        loadQuestion();
+
+    </script>
+
+</body>
+
+</html>
